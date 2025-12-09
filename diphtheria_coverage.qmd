@@ -292,18 +292,36 @@ Plot.plot({
   },
   marks: [
     Plot.ruleY([0]),
+    // Coverage for at least 1 dose
     Plot.line(coverage_for_selected, {x: "curr_eval_year", y: "dose_1_cov", stroke: "red", 
                   title: (d) => `≥1 dose`}),
+    Plot.dot(coverage_for_selected, {x: "curr_eval_year", y: "dose_1_cov", fill: "red", 
+                  title: (d) => `≥1 dose`}),
+    // Coverage for at least 2 doses
     Plot.line(coverage_for_selected, {x: "curr_eval_year", y: "dose_2_cov", stroke: "blue", 
                   title: (d) => `≥2 dose`}),
+    Plot.dot(coverage_for_selected, {x: "curr_eval_year", y: "dose_2_cov", fill: "blue", 
+                  title: (d) => `≥2 dose`}),
+    // Coverage for at least 3 doses
     Plot.line(coverage_for_selected, {x: "curr_eval_year", y: "dose_3_cov", stroke: "purple", 
                   title: (d) => `≥3 dose`}),
+    Plot.dot(coverage_for_selected, {x: "curr_eval_year", y: "dose_3_cov", fill: "purple", 
+                  title: (d) => `≥3 dose`}),
+    // Coverage for at least 1 dose on schedule
     Plot.line(coverage_for_selected, {x: "curr_eval_year", y: "dose_1_on_schedule_cov", 
     stroke: "red", strokeDasharray: [5, 5], title: (d) => `≥1 dose on schedule`}),
+    Plot.dot(coverage_for_selected, {x: "curr_eval_year", y: "dose_1_on_schedule_cov", 
+    fill: "red", title: (d) => `≥1 dose on schedule`}),
+    // Coverage for at least 2 doses on schedule
     Plot.line(coverage_for_selected, {x: "curr_eval_year", y: "dose_2_on_schedule_cov", 
     stroke: "blue", strokeDasharray: [5, 5], title: (d) => `≥2 dose on schedule`}),
+    Plot.dot(coverage_for_selected, {x: "curr_eval_year", y: "dose_2_on_schedule_cov", 
+    fill: "blue", title: (d) => `≥2 dose on schedule`}),
+    // Coverage for at least 3 doses on schedule
     Plot.line(coverage_for_selected, {x: "curr_eval_year", y: "dose_3_on_schedule_cov", 
     stroke: "purple",  strokeDasharray: [5, 5], title: (d) => `≥3 dose on schedule`}),
+    Plot.dot(coverage_for_selected, {x: "curr_eval_year", y: "dose_3_on_schedule_cov", 
+    fill: "purple", title: (d) => `≥3 dose on schedule`})
   ]
 })
 )
