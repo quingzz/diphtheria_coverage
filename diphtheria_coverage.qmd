@@ -16,21 +16,32 @@ library(downloadthis)
 cov_by_perma <- readRDS("data/dip_coverage_by_perma.rds")
 cov_by_reg <- readRDS("data/dip_coverage_by_reg.rds")
 
-cov_by_perma <- cov_by_perma %>% mutate(
-  province = case_when(
-    province == "Thành phố Hồ Chí Minh" ~ "Hồ Chí Minh",
-    province == "Hòa Bình" ~ "Hoà Bình",
-    .default = province
+cov_by_perma <- cov_by_perma %>% 
+  mutate(
+    province = case_when(
+      province == "Thành phố Hồ Chí Minh" ~ "Hồ Chí Minh",
+      province == "Hòa Bình" ~ "Hoà Bình",
+      .default = province
+    ),
+  ) %>% 
+  rename(eval_year = curr_eval_year) %>% 
+  mutate(
+    eval_date = as.Date(paste0(eval_year, "-12-31")),
+    .before = "eval_year"
   )
-)
 
 cov_by_reg <- cov_by_reg %>% mutate(
-  province_reg = case_when(
-    province_reg == "Thành phố Hồ Chí Minh" ~ "Hồ Chí Minh",
-    province_reg == "Hòa Bình" ~ "Hoà Bình",
-    .default = province_reg
+    province_reg = case_when(
+      province_reg == "Thành phố Hồ Chí Minh" ~ "Hồ Chí Minh",
+      province_reg == "Hòa Bình" ~ "Hoà Bình",
+      .default = province_reg
+    )
+  ) %>% 
+  rename(eval_year = curr_eval_year) %>% 
+  mutate(
+    eval_date = as.Date(paste0(eval_year, "-12-31")),
+    .before = "eval_year"
   )
-)
 
 write_csv(cov_by_perma, "data/dip_coverage_by_perma.csv")
 write_csv(cov_by_reg, "data/dip_coverage_by_reg.csv")
@@ -63,10 +74,9 @@ cov_by_reg <- read.csv("data/dip_coverage_by_reg.csv")
 +---------------------------+------------------------------------------------------------------------------------------------------------------------------------+
 | Variable                  | Description                                                                                                                        |
 +===========================+====================================================================================================================================+
-| `curr_eval_year`          | Year of evaluation (i.e. the year for which coverage is computed)                                                                  |
-|                           |                                                                                                                                    |
-|                           | \                                                                                                                                  |
-|                           | For example: when `curr_eval_year=2019` coverage is computed for children born between 2014-2019                                   |
+| `eval_date`               | Date of evaluation (i.e. the date for which coverage is computed)                                                                  |
++---------------------------+------------------------------------------------------------------------------------------------------------------------------------+
+| `eval_year`               | Year of evaluation (i.e. year in `eval_date`)                                                                                      |
 +---------------------------+------------------------------------------------------------------------------------------------------------------------------------+
 | `province`/`province_reg` | Province of residence, based on either the permanent address (`province`) or the registered vaccination address (`province_reg`).\ |
 |                           | \                                                                                                                                  |
@@ -99,9 +109,25 @@ cov_by_reg <- read.csv("data/dip_coverage_by_reg.csv")
 | `dose_3_on_schedule`      | Coverage for 3 dose on schedule `dose3_on_schedule/n_children`                                                                     |
 +---------------------------+------------------------------------------------------------------------------------------------------------------------------------+
 
-**Note:** I found 2 diphtheria vaccination schedules for newborns: either at `2-3-4` months old or `2-4-6` months old so I used the latter to be more inclusive.
-
 </details>
+
+::: {.callout-note collapse="true"}
+## Additional details regarding the computation process
+
+-   **Schedule definition:** I found 2 diphtheria vaccination schedules for newborns: either at `2-3-4` months old or `2-4-6` months old so I used the latter to be more inclusive.
+
+-   **Denominator:** `n_children` is computed by the total number of children born within the past 5 years (e.g. when `eval_year = 2019`, `n_children` is the sum of children born in 2014-2019.
+
+-   **Numerator:** number of vaccinated children is computed as follows:
+
+    -   Step 1: Filter diphtheria vaccination records for children aged 0-5 at `eval_year` and only doses administered by the end of `eval_year`
+
+        -   e.g. for `eval_year = 2019` get records for children born in 2014-2019 and year of vaccination ≤ 2019
+
+    -   Step 2: Count total doses of diphtheria per child received by the end of `eval_year`
+
+    -   Step 3: Count number of children at different dosage level
+:::
 
 ### Download data
 
@@ -203,7 +229,7 @@ coverage_type_mapping = new Map([
   ["on schedule", "_on_schedule_cov"],
 ])
 
-coverage_data_filter = coverage_data.filter(d => (d.curr_eval_year === yearSelect))
+coverage_data_filter = coverage_data.filter(d => (d.eval_year === yearSelect))
 
 province_coverage_map = new Map(
   coverage_data_filter.map(
@@ -281,7 +307,9 @@ addTooltips( // Add tooltips
 Plot.plot({
   title: "Diphtheria coverage for " + province_select,
   x: {
-    label: "Year"
+    label: "Date",
+    type: "time",
+    tickFormat: d3.utcFormat("%Y-%m-%d")   // or "%d %b %Y"
   },
   y: {
     label: "Vaccine coverage (%)",
@@ -293,34 +321,34 @@ Plot.plot({
   marks: [
     Plot.ruleY([0]),
     // Coverage for at least 1 dose
-    Plot.line(coverage_for_selected, {x: "curr_eval_year", y: "dose_1_cov", stroke: "red", 
+    Plot.line(coverage_for_selected, {x: d => new Date(d.eval_date), y: "dose_1_cov", stroke: "red", 
                   title: (d) => `≥1 dose`}),
-    Plot.dot(coverage_for_selected, {x: "curr_eval_year", y: "dose_1_cov", fill: "red", 
+    Plot.dot(coverage_for_selected, {x: d => new Date(d.eval_date), y: "dose_1_cov", fill: "red", 
                   title: (d) => `≥1 dose`}),
     // Coverage for at least 2 doses
-    Plot.line(coverage_for_selected, {x: "curr_eval_year", y: "dose_2_cov", stroke: "blue", 
+    Plot.line(coverage_for_selected, {x: d => new Date(d.eval_date), y: "dose_2_cov", stroke: "blue", 
                   title: (d) => `≥2 dose`}),
-    Plot.dot(coverage_for_selected, {x: "curr_eval_year", y: "dose_2_cov", fill: "blue", 
+    Plot.dot(coverage_for_selected, {x: d => new Date(d.eval_date), y: "dose_2_cov", fill: "blue", 
                   title: (d) => `≥2 dose`}),
     // Coverage for at least 3 doses
-    Plot.line(coverage_for_selected, {x: "curr_eval_year", y: "dose_3_cov", stroke: "purple", 
+    Plot.line(coverage_for_selected, {x: d => new Date(d.eval_date), y: "dose_3_cov", stroke: "purple", 
                   title: (d) => `≥3 dose`}),
-    Plot.dot(coverage_for_selected, {x: "curr_eval_year", y: "dose_3_cov", fill: "purple", 
+    Plot.dot(coverage_for_selected, {x: d => new Date(d.eval_date), y: "dose_3_cov", fill: "purple", 
                   title: (d) => `≥3 dose`}),
     // Coverage for at least 1 dose on schedule
-    Plot.line(coverage_for_selected, {x: "curr_eval_year", y: "dose_1_on_schedule_cov", 
+    Plot.line(coverage_for_selected, {x: d => new Date(d.eval_date), y: "dose_1_on_schedule_cov", 
     stroke: "red", strokeDasharray: [5, 5], title: (d) => `≥1 dose on schedule`}),
-    Plot.dot(coverage_for_selected, {x: "curr_eval_year", y: "dose_1_on_schedule_cov", 
+    Plot.dot(coverage_for_selected, {x: d => new Date(d.eval_date), y: "dose_1_on_schedule_cov", 
     fill: "red", title: (d) => `≥1 dose on schedule`}),
     // Coverage for at least 2 doses on schedule
-    Plot.line(coverage_for_selected, {x: "curr_eval_year", y: "dose_2_on_schedule_cov", 
+    Plot.line(coverage_for_selected, {x: d => new Date(d.eval_date), y: "dose_2_on_schedule_cov", 
     stroke: "blue", strokeDasharray: [5, 5], title: (d) => `≥2 dose on schedule`}),
-    Plot.dot(coverage_for_selected, {x: "curr_eval_year", y: "dose_2_on_schedule_cov", 
+    Plot.dot(coverage_for_selected, {x: d => new Date(d.eval_date), y: "dose_2_on_schedule_cov", 
     fill: "blue", title: (d) => `≥2 dose on schedule`}),
     // Coverage for at least 3 doses on schedule
-    Plot.line(coverage_for_selected, {x: "curr_eval_year", y: "dose_3_on_schedule_cov", 
+    Plot.line(coverage_for_selected, {x: d => new Date(d.eval_date), y: "dose_3_on_schedule_cov", 
     stroke: "purple",  strokeDasharray: [5, 5], title: (d) => `≥3 dose on schedule`}),
-    Plot.dot(coverage_for_selected, {x: "curr_eval_year", y: "dose_3_on_schedule_cov", 
+    Plot.dot(coverage_for_selected, {x: d => new Date(d.eval_date), y: "dose_3_on_schedule_cov", 
     fill: "purple", title: (d) => `≥3 dose on schedule`})
   ]
 })
