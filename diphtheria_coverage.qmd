@@ -13,8 +13,8 @@ library(downloadthis)
 
 ```{r echo=FALSE}
 # preprocess data
-cov_by_perma <- readRDS("data/dip_coverage_by_perma.rds")
-cov_by_reg <- readRDS("data/dip_coverage_by_reg.rds")
+cov_by_perma <- readRDS("_fr_registry/data/dip_coverage_by_perma.rds")
+cov_by_reg <- readRDS("_fr_registry/data/dip_coverage_by_reg.rds")
 
 cov_by_perma <- cov_by_perma %>% 
   mutate(
@@ -45,6 +45,8 @@ cov_by_reg <- cov_by_reg %>% mutate(
 
 write_csv(cov_by_perma, "data/dip_coverage_by_perma.csv")
 write_csv(cov_by_reg, "data/dip_coverage_by_reg.csv")
+write_rds(cov_by_perma, "data/dip_coverage_by_perma.rds")
+write_rds(cov_by_reg, "data/dip_coverage_by_reg.rds")
 ```
 
 ## Coverage data
